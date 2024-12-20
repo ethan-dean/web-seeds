@@ -22,7 +22,37 @@ function connectToDatabase() {
 connectToDatabase();
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// Create userData table if it does not exist already.
+// Create tables if they do not exist already.
+
+// Function to create a table dynamically and log records
+function setupTable(createTableQuery: string) {
+  // Extract table name from the query
+  const match = createTableQuery.match(/CREATE TABLE IF NOT EXISTS (\w+)/i);
+  const tableName = match ? match[1] : null;
+  if (!tableName) {
+    console.error('Error: Unable to extract table name from query.');
+    return;
+  }
+
+  // Create the table
+  connection.query(createTableQuery, (err: any) => {
+    if (err) {
+      console.error(`Error creating ${tableName} table:`, err.stack);
+      return;
+    }
+    console.log(`${tableName} table is set up and ready.`);
+  });
+
+  // Log existing records on startup (for debugging)
+  connection.query(`SELECT * FROM ${tableName}`, (err: any, results: any) => {
+    if (err) {
+      console.error(`Error querying ${tableName}:`, err.stack);
+      return;
+    }
+    console.log(`${tableName} records:`, results);
+  });
+}
+
 function setupDatabase() {
   // Log available databases (for debugging)
   connection.query('SHOW DATABASES', (err: any, results: any) => {
@@ -46,23 +76,7 @@ function setupDatabase() {
       emailCodeTimeout INT UNSIGNED NOT NULL,
       emailCodeAttempts INT UNSIGNED NOT NULL
     )`;
-
-  connection.query(createUserTableQuery, (err: any) => {
-    if (err) {
-      console.error('Error creating userData table:', err.stack);
-      return;
-    }
-    console.log('userData table is set up and ready.');
-  });
-
-  // Optional: Log existing userData records (for debugging)
-  connection.query('SELECT * FROM userData', (err: any, results: any) => {
-    if (err) {
-      console.error('Error querying userData:', err.stack);
-      return;
-    }
-    console.log('Existing userData records:', results);
-  });
+  setupTable(createUserTableQuery);
 }
 setupDatabase();
 
